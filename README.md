@@ -5,6 +5,7 @@ Collection of small games written by oneself
 全是自己用vue写的小游戏，提高代码以及逻辑能力，娱乐中学习，让学习不干燥！
 
 # 游戏文件说明
+
 ### 1. zml-game-advert
 广告小游戏合集，主要存放平常在手机上刷到的广告小游戏，不是百分百还原，主要简单的实现游戏原理以及玩法
 
@@ -23,6 +24,6 @@ Collection of small games written by oneself
 ### 6. zml-game-snake
 贪吃蛇
 
-### 6. zml-game-tetris
+### 7. zml-game-tetris
 俄罗斯方块
 
