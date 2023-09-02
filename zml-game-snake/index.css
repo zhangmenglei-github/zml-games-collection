@@ -1,0 +1,161 @@
+*{
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+html,body {
+	background-color: #2C3E50;
+}
+
+div, p, span, button{
+  box-sizing: border-box;
+}
+
+.home{
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	position: relative;
+}
+
+.bg {
+	height: 155%;
+}
+
+/* 地图 */
+.map{
+	width: 420px;
+	height: 540px;
+  display: flex;
+  flex-wrap: wrap;
+  flex-direction: column;
+	overflow: hidden;
+	position: absolute;
+	transform: translate(-18px, 30px);
+	border-radius: 40px;
+}
+.map .mapRow {
+	flex: 1;
+  display: flex;
+}
+.map .mapCol{
+  flex: 1;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+img.food {
+	width: 100%;
+	height: 100%;
+}
+
+
+/* 墙壁 */
+.brick {
+	width: 100%;
+	height: 100%;
+	background: rgb(90, 150, 0);
+	border: 8px solid;
+	border-top-color: rgb(152, 253, 0);
+	border-right-color: rgb(59, 99, 0);
+	border-bottom-color: rgb(40, 68, 0);
+	border-left-color: rgb(121, 202, 0);
+}
+
+/* 蛇头 */
+.snake-head {
+	width: 100%;
+	height: 100%;
+	background: rgb(255,87,87);
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 2px;
+}
+.snake-head::before {
+	content: none !important;
+}
+.snake-head span {
+	display: block;
+	width: 12px;
+	height: 12px;
+	background-color: #fff;
+	border-radius: 50%;
+	position: relative;
+}
+.snake-head span::before {
+	content: "";
+	position: absolute;
+	width: 50%;
+	height: 50%;
+	background-color: #2C3E50;
+	border-radius: 50%;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%,-50%);
+}
+
+/* 蛇身 */
+.snake-body {
+	width: 100%;
+	height: 100%;
+	background: rgb(255,87,87);
+	overflow: hidden;
+}
+
+/* 立体蛇 */
+.threeD {
+	background: rgb(255,87,87);
+	box-shadow: 0px 0px 30px rgb(255,87,87);
+	overflow: hidden;
+	position: relative;
+}
+.threeD::before {
+	content: "";
+	background: #fff; 
+	border-radius: 100%;
+	position: absolute;
+	border: 0.3em solid rgb(255,87,87); 
+	filter: blur(5px); 
+	width: 50%;
+	height: 50%;
+	left: 50%;
+	top: 50%;
+	transform: translate(-50%,-50%);
+}
+
+
+.score{
+	line-height: 1;
+	color: rgb(220,197,117);
+	font-size: 40px;
+	font-weight: bold;
+	position: absolute;
+	top: 110px;
+	left: 50%;
+	transform: rotate(6deg) translateX(-50%);
+	text-shadow: -2px -2px 2px rgba(0,0,0,.8), 2px 2px 2px rgba(255,255,255,.6);
+	background-color: transparent;
+}
+
+.gameMask {
+	position: absolute;
+	width: 100%;
+	height: 100%;
+	z-index: 99;
+	background-color: rgba(0,0,0, .3);
+	color: #fff;
+	font-size: 30px;
+	top: 0;
+	left: 0;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+	transition: .2s;
+	user-select: none;
+}

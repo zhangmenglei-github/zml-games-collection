@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>广告小游戏 之 滑动消除</title>
+		<link rel="stylesheet" href="index.css">
+		<script src="index.js"></script>
+		<script src="../vue.min.js"></script>
+	</head>
+	<body>
+		<div id="app">
+			<div class="game">
+				<div class="levelTip" v-if="!win">Level {{ levelIndex + 1 }}</div>
+				<div class="levelTip" v-if="win">恭喜你，通过全部关卡！</div>
+				<div class="box" 
+					:style="{
+						'border-top-color': getColor(colorVal[0]),
+						'border-bottom-color': getColor(colorVal[1]),
+						'border-left-color': getColor(colorVal[2]),
+						'border-right-color': getColor(colorVal[3]),
+					}"
+				>
+					<div class="list">
+						<div class="tr" v-for="(item1, index1) in list">
+							<div 
+								class="td" 
+								v-for="(item2, index2) in item1"
+								:style="{'background-color': getColor(item2)}"
+							></div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<script>
+			const vm = new Vue({
+				el: '#app',
+				data() {
+					return {
+						levels: levels,				// 全部关卡
+						levelIndex: 0,				// 当前关卡
+						dirs: [0, 1, 2, 3],		// 上下左右
+						dir: null,						// 运动的方向
+						timer: null, 					// 定时器
+						win: false,						// 是否通过全部关卡
+					}
+				},
+				mounted() {
+					this.onKeyDown();
+					this.onTimer();
+				},
+				computed: {
+					// 根据关卡值，来获取当前关卡所需的数据
+					list() {
+						return this.levels[this.levelIndex].data;
+					},
+					// 根据关卡值，来获取当前关卡所需的颜色 —— 值
+					colorVal() {
+						return this.levels[this.levelIndex].colorVal;
+					},
+					// 根据关卡值，来获取当前关卡所需的总颜色 —— 字符串
+					colorStr() {
+						return this.levels[this.levelIndex].colorStr;
+					},
+				},
+				methods: {
+					// 获取颜色
+					getColor(colorIndex) {
+						return this.colorStr[colorIndex];
+					},
+					
+					// 监听键盘上下左右
+					onKeyDown() {
+						document.addEventListener('keydown', e => {
+							if(this.dirs.includes(this.dir)) {
+								return;
+							}
+							if(e.keyCode == 38) { this.dir = 0; }
+							if(e.keyCode == 40) { this.dir = 1; }
+							if(e.keyCode == 37) { this.dir = 2; }
+							if(e.keyCode == 39) { this.dir = 3; }
+						})
+					},
+					
+					// 定时器，来使图案运行
+					onTimer() {
+						if(this.timer) {
+							clearInterval(this.timer);
+							this.timer = null;
+						}
+						this.timer = setInterval(() => {
+							if(this.dirs.includes(this.dir)) {
+								if(this.dir == 0) { this.onMoveUp(); } 
+								else if(this.dir == 1) { this.onMoveDown(); } 
+								else if(this.dir == 2) { this.onMoveLeft(); } 
+								else if(this.dir == 3) {this.onMoveRight(); }
+								this.$forceUpdate();
+							}
+						}, 1000 / 75);
+					},
+					
+					// 上  bool = 作用是为了防止用户频繁操作方向，必须等一个方向运动完，才可以进行下一个方向的移动
+					onMoveUp() {
+						let bool = false;
+						for(let i = 0; i < this.list.length; i++) {
+							for(let j = 0; j < this.list[0].length; j++) {
+								let val = this.list[i][j];
+								if(this.colorVal.includes(val) && i - 1 >= 0 && this.list[i - 1][j] == 0) {
+									this.list[i][j] = 0;
+									this.list[i - 1][j] = val;
+									bool = true;
+								}
+								// 如果小块到达边缘，颜色一样，则消除
+								if(i == 0 && this.colorVal.includes(val) && val == this.colorVal[this.dir]) {
+									this.list[i][j] = 0;
+								}
+							}
+						}
+						if(!bool) { 
+							this.dir = null;
+							this.isWin(); 
+						}
+					},
+					// 下
+					onMoveDown() {
+						let bool = false;
+						for(let i = this.list.length - 1; i >= 0; i--) {
+							for(let j = 0; j < this.list[0].length; j++) {
+								let val = this.list[i][j];
+								if(this.colorVal.includes(val) && (i + 1 <= this.list.length - 1) && this.list[i + 1][j] == 0) {
+									this.list[i][j] = 0;
+									this.list[i + 1][j] = val;
+									bool = true;
+								}
+								if(i == this.list.length - 1 && this.colorVal.includes(val) && val == this.colorVal[this.dir]) {
+									this.list[i][j] = 0;
+								}
+							}
+						}
+						if(!bool) {
+							this.dir = null;
+							this.isWin(); 
+						}
+					},
+					// 左
+					onMoveLeft() {
+						let bool = false;
+						for(let j = 0; j < this.list[0].length; j++) {
+							for(let i = 0; i < this.list.length; i++) {
+								let val = this.list[i][j];
+								if(this.colorVal.includes(val) && (j - 1 >= 0) && this.list[i][j - 1] == 0) {
+									this.list[i][j] = 0;
+									this.list[i][j - 1] = val;
+									bool = true;
+								}
+								if(j == 0 && this.colorVal.includes(val) && val == this.colorVal[this.dir]) {
+									this.list[i][j] = 0;
+								}
+							}
+						}
+						if(!bool) {
+							this.dir = null;
+							this.isWin(); 
+						}
+					},
+					// 右
+					onMoveRight() {
+						let bool = false;
+						for(let j = this.list[0].length - 1; j >= 0; j--) {
+							for(let i = 0; i < this.list.length; i++) {
+								let val = this.list[i][j];
+								if(this.colorVal.includes(val) && (j + 1 <= this.list[0].length) && this.list[i][j + 1] == 0) {
+									this.list[i][j] = 0;
+									this.list[i][j + 1] = val;
+									bool = true;
+								}
+								if(j == this.list[0].length - 1 && this.colorVal.includes(val) && val == this.colorVal[this.dir]) {
+									this.list[i][j] = 0;
+								}
+							}
+						}
+						if(!bool) {
+							this.dir = null;
+							this.isWin(); 
+						}
+					},
+					
+					// 判断当前关卡是否通关
+					isWin() {
+						let bool = false;
+						for(let i = 0; i < this.list.length; i++) {
+							for(let j = 0; j < this.list[0].length; j++) {
+								if(this.list[i][j] !== 0) {
+									bool = true;
+								}
+							}
+						}
+						if(!bool) {
+							console.log(`通过关卡：Level ${this.levelIndex + 1}`);
+							this.dir = null;
+							clearInterval(this.timer);
+							this.timer = null;
+							this.changeLevel();
+						}
+					},
+					
+					// 切换关卡
+					// 如果是最后一关，则游戏结束
+					// 如果不是最后一关，则关卡+1，重新启动计时器
+					changeLevel() {
+						if(this.levelIndex == this.levels.length - 1) {
+							this.win = true;
+						} else {
+							this.levelIndex++;
+							this.onTimer();
+						}
+					}
+				}
+			})
+		</script>
+	</body>
+</html>

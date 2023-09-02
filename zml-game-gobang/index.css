@@ -1,0 +1,163 @@
+* {
+	border: 0;
+	margin: 0;
+	padding: 0;
+	box-sizing: border-box;
+}
+.index{
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+  padding: 30px 0px;
+  background: url(img/bg.png) no-repeat;
+  background-size: cover;
+}
+.indexBox{
+  width: 100%;
+  height: 100%;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 700px;
+}
+
+/* 头部 */
+.header{
+  width: 100%;
+  height: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.header div{
+  display: flex;
+  align-items: center;
+  font-size: 25px;
+  font-weight: bold;
+  margin: 0px 100px;
+  pointer-events: none;
+}
+.header img{
+  margin-left: 10px;
+}
+.header span{
+  font-size: 50px;
+  font-weight: bold;
+}
+
+/* 中间棋盘 */
+/* 棋盘渲染 */
+.chessboard{
+  width: 100%;
+  flex: 1;
+}
+.chessBox{
+  width: 100%;
+  height: 100%;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.chessBox-style{
+  width: 700px;
+  height: 700px;
+  margin: auto;
+  position: absolute;
+  z-index: 1;
+}
+.chessBox-style table,
+.chessBox-chess table{
+  border-collapse: collapse;
+  width: 100%;
+  height: 100%;
+}
+.chessBox-style table tbody{
+
+}
+.chessBox-style table tr{
+
+}
+.chessBox-style table tr td{
+  width: 50px;
+  height: 50px;
+  border: 1px solid #000000;
+}
+.chessBox-style>span{
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #000000;
+  transform: translate(-50%,-50%);
+}
+.chessBox-style .centerPoint{
+  top: 50%;
+  left: 50%;
+}
+.chessBox-style .point1{
+  top: 150px;
+  left: 150px;
+}
+.chessBox-style .point2{
+  top: 150px;
+  left: 550px;
+}
+.chessBox-style .point3{
+  top: 550px;
+  left: 150px;
+}
+.chessBox-style .point4{
+  top: 550px;
+  left: 550px;
+}
+
+/* 落子网格 */
+.chessBox-chess{
+  position: absolute;
+  width: 750px;
+  height: 750px;
+  border: 1px solid #000;
+  z-index: 999;
+}
+.chessBox-chess table tr td{
+  width: 50px;
+  height: 50px;
+}
+.chessBox-chess table tr td button{
+  width: 100%;
+  height: 100%;
+  background-color: inherit;
+  font-size: 22px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.chessBox-chess table tr td button img{
+  width: 43px;
+}
+.chessBox-chess img{
+  border-radius: 50%;
+  box-shadow: rgba(0,0,0,0.5) 0px 0px 10px 0px;
+}
+
+/* 底部 */
+.function{
+  width: 100%;
+  height: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.function button{
+  width: 150px;
+  height: 50px;
+  transition: all .3s;
+  margin: 0px 20px;
+  cursor: pointer;
+}
+.function button:hover{
+  box-shadow: rgba(0,0,0,0.3) 3px 3px 5px 0px;
+  margin-top: -5px;
+}

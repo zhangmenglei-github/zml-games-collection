@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>广告游戏 - 花园灌溉</title>
+	<link rel="stylesheet" href="index.css">
+	<script src="../vue.min.js"></script>
+	<script src="index.js"></script>
+</head>
+<body>
+  <div id="app">
+		<div class="app">
+			<div class="game">
+				<div class="game-tr" :style="{'width': (col * 150 + 8) + 'px'}">
+					<div class="game-td" v-for="(item1, index1) in map" @click="onClick(index1)">
+						<div 
+							class="game-block" 
+							:class="{ 'bgWater': item2 == 3 || item2 == 5, 'bgSoil': item2 == 4}"
+							v-for="(item2, index2) in item1"
+						>
+							<img src="img/road.png" alt="" v-if="item2 == 0">
+							<img src="img/soil.png" alt="" v-if="item2 == 1">
+							<img src="img/water.gif" alt="" v-if="item2 == 2">
+							<img src="img/waterHead.png" alt="" v-if="item2 == 3" class="waterHead">
+							<img src="img/tree.png" alt="" v-if="item2 == 4 || item2 == 5" class="tree" :class="{'treeSmall': item2==4, 'treeBig': item2==5}">
+						</div>
+					</div>
+					<!-- 胜利弹框 -->
+					<div class="win" v-if="win">You Win!</div>
+				</div>
+			</div>
+		</div>
+		<!-- <img src="img/waterHead.png" alt="" class="waterHead"> -->
+  </div>
+  <script>
+    const vm = new Vue({
+			el: '#app',
+			data() {
+				return {
+					// 0=草地 1=泥路 2=水 3=水源 4=小树 5=大树
+					map: data,
+					domList: [],
+					col: 4,
+					tree: 0,
+					win: false
+				}
+			},
+			mounted() {
+				this.getInfo();
+				this.drawBlockWater();
+				this.drawAllBlock();
+			},
+			methods: {
+				// 获取花园每个大土地元素
+				// 获取花园中的树木
+				getInfo() {
+					this.domList = document.querySelectorAll('.game-td');
+					for(let i = 0; i < this.map.length; i++) {
+						if(this.map[i].includes(4)) {
+							this.tree++;
+						}
+					}
+				},
+				
+				// 点击地块旋转
+				onClick(index) {
+					let theDom = this.domList[index];
+					let rotateDegree = theDom.style.transform.replace(/[^0-9]/ig, "") * 1 || 0;
+					rotateDegree += 90;
+					theDom.style.transform = `rotate(${ rotateDegree }deg)`;
+					this.drawAllBlock();
+				},
+				
+				// 根据某大块地的周围块中是否有水并连接，渲染连接的小块中的水
+				drawAllBlock() {
+					let bool = false; // 递归渲染整个地图
+					for(let i = 0; i < this.map.length; i++) {
+						// 我们只要查找每个大块中 第 2、4、6、8块的周围是否相连即可——————2=上 4=左 6=右 8=下
+						let list = this.map[i];
+						let arr = [];
+						if(list[1] == 1) { arr.push(1) };
+						if(list[3] == 1) { arr.push(3) };
+						if(list[5] == 1) { arr.push(5) };
+						if(list[7] == 1) { arr.push(7) };
+						for(let a = 0; a < arr.length; a++) {
+							let aVal = arr[a];
+							let dir = this.getDir(i, aVal);
+							if(this.isConnectNeighbor(i, dir).isTrue) {
+								this.map[i][aVal] = 2;
+								bool = true;
+							}
+						}
+					}
+					this.drawBlockWater();
+					if(bool) {
+						this.drawAllBlock();
+					}
+				},
+				
+				// 渲染每个大块地中的水
+				drawBlockWater() {
+					for(let i = 0; i < this.map.length; i++) {
+						let list = this.map[i];
+						let bool = list.some(e => e == 2 || e == 3);
+						if(bool) {
+							for(let j = 0; j < list.length; j++) {
+								if(list[j] == 1) {
+									this.map[i][j] = 2;
+								}
+								if(list[j] == 4) {
+									this.map[i][j] = 5;
+								}
+							}
+						}
+					}
+					this.$forceUpdate();
+					this.clearBlockWater();
+					this.isWin();
+				},
+						
+				// 清除大块地里面的水， 如果当前大块没跟水源有连接关系，则清除当前块中的所有水
+				clearBlockWater() {
+					let waterHeadList = [];
+					let waterHeadIndex = null;
+					for(let i = 0; i < this.map.length; i++) {
+						if(this.map[i].includes(3)) {
+							waterHeadList = this.map[i];
+							waterHeadIndex = i;
+							break;
+						}
+					}
+					let waterHeadOut = waterHeadList.findIndex(item => item == 2); // 出水口的下标值
+					// 如果水源地没跟任何方块连接，那就得把之前其他格子中的水都清除
+					if(!this.isConnectNeighbor(waterHeadIndex, this.getDir(waterHeadIndex, waterHeadOut)).isTrue) {
+						for(let i = 1; i < this.map.length; i++) {
+							for(let j = 0; j < this.map[i].length; j++) {
+								if(this.map[i][j] == 2) {
+									this.map[i][j] = 1;
+								}
+								if(this.map[i][j] == 5) {
+									this.map[i][j] = 4;
+								}
+							}
+						}
+						this.$forceUpdate();
+					} else {
+						// 获取所有有水的大块
+						let havaWaterList = [];
+						for(let i = 0; i < this.map.length; i++) {
+							if(this.map[i].includes(2) && !this.map[i].includes(3)) {
+								havaWaterList.push(i)
+							}
+						}
+						// 拿到每块有水的相邻连接的大块土地下标
+						if(havaWaterList.length) {
+							const neighborList = [];
+							for(let i = 0; i < havaWaterList.length; i++) {
+								let index = havaWaterList[i];
+								const listSewer = this.getBlockSewer(index);
+								neighborList[i] = [];
+								neighborList[i].push(index);
+								for(let j = 0; j < listSewer.length; j++) {
+									if(this.isConnectNeighbor(index, this.getDir(index, listSewer[j])).isTrue) {
+										neighborList[i].push(this.isConnectNeighbor(index, this.getDir(index, listSewer[j])).index);
+									}
+								}
+							}
+							// 根据拿到的自身与相邻的大块土地的坐标，我们就要根据二维数组中，看看是否能连接到水源，不能连接的，都必须抽水
+							const aindex = neighborList.findIndex(item => item.includes(0)); // 拿到水源在neighborList中的下标
+							const alist = neighborList.splice(aindex, 1)[0];
+							// 这时候就能拿到 完整路线和 不能连接我的路线
+							const [arr1, arr2] = this.handleArr(alist, neighborList);
+							const noConnectList = [...new Set(arr2.flat())];
+							for (let i = 0; i < noConnectList.length; i++) {
+								let blockIndex = noConnectList[i];
+								let blocklist = this.map[blockIndex];
+								for (let j = 0; j < blocklist.length; j++) {
+									if(this.map[blockIndex][j] == 2) {
+										this.map[blockIndex][j] = 1;
+									}
+									if(this.map[blockIndex][j] == 5) {
+										this.map[blockIndex][j] = 4;
+									}
+								}
+							}
+							this.$forceUpdate();
+						}
+					}
+				},
+				
+				// a=一维数组 b=二维数组
+				// 如果b中某一数组元素包含数组 a 中的任意一个值，则将该元素合并到数组 a 中，并从数组 b 中删除该元素
+				handleArr(a, b) {
+					while (true) {
+					  let foundMatch = false;
+					  for (let i = 0; i < b.length; i++) {
+					    if (a.some(x => b[i].includes(x))) {
+					      a = a.concat(b[i]);
+					      b.splice(i, 1);
+					      foundMatch = true;
+					      break;
+					    }
+					  }
+					  if (!foundMatch) {
+					    break;
+					  }
+					}
+					return [a, b];
+				},
+
+				// 判断是否胜利（就是让所有的树长大）
+				isWin() {
+					let num = 0;
+					for(let i = 0; i < this.map.length; i++) {
+						if(this.map[i].includes(5)) {
+							num++;
+						}
+					}
+					if(num === this.tree) {
+						this.win = true
+					}
+				},
+				
+				// 判断某个大块是否跟上下左右相邻的大块连到水  currentIndex=当前大块地的下标  dir需要判断连接的方向
+				// （比如dir传入up，说明想看看自己跟上面那一块是否有连接水源）
+				isConnectNeighbor(currentIndex, dir) {
+					// 左右需要判断两次，因为大块地数组是一个一维数组，需要判断左右的临界值
+					if( 
+						(!dir) ||
+						(dir == 'up' && currentIndex - this.col < 0) || 
+						(dir == 'down' && currentIndex + this.col > this.map.length - 1) || 
+						(dir == 'left' && currentIndex - 1 < 0) ||
+						(dir == 'left' && currentIndex % this.col == 0) ||
+						(dir == 'right' && currentIndex + 1 > this.map.length - 1) ||
+						(dir == 'right' && (currentIndex + 1) % this.col == 0)
+					) {
+						return false;
+					}
+					let bool = false;
+					// 获取当前大块A的上面大块B，判断B大块中是否有水，有水的话，说明全部空地都有水，只要判断有水的有没有在下方的
+					let dirBlockIndex = null;
+					switch(dir) {
+						case 'up': dirBlockIndex = currentIndex - this.col; break;
+						case 'down': dirBlockIndex = currentIndex + this.col; break;
+						case 'left': dirBlockIndex = currentIndex - 1; break;
+						case 'right': dirBlockIndex = currentIndex + 1; break;
+					}
+					
+					const arr = this.map[dirBlockIndex];
+					let currentBlockRotate = this.domList[dirBlockIndex].style.transform.replace(/[^0-9]/ig, "") * 1 || 0;
+					let rotateNum = (currentBlockRotate / 90) % 4;
+					
+					// 上下左右的大块中，必须有水才可以进行下一步判断
+					if(arr.includes(2)) {
+						if(dir == 'up') {
+							if((arr[1] == 2 && rotateNum == 2) || (arr[3] == 2 && rotateNum == 3) || (arr[5] == 2 && rotateNum == 1) || (arr[7] == 2 && rotateNum == 0)) {
+								bool = true;
+							}
+						}
+						if(dir == 'left') {
+							if((arr[1] == 2 && rotateNum == 1) || (arr[3] == 2 && rotateNum == 2) || (arr[5] == 2 && rotateNum == 0) || (arr[7] == 2 && rotateNum == 3)) {
+								bool = true;
+							}
+						}
+						if(dir == 'right') {
+							if((arr[1] == 2 && rotateNum == 3) || (arr[3] == 2 && rotateNum == 0) || (arr[5] == 2 && rotateNum == 2) || (arr[7] == 2 && rotateNum == 1)) {
+								bool = true;
+							}
+						}
+						if(dir == 'down') {
+							if((arr[1] == 2 && rotateNum == 0) || (arr[3] == 2 && rotateNum == 1) || (arr[5] == 2 && rotateNum == 3) || (arr[7] == 2 && rotateNum == 2)) {
+								bool = true;
+							}
+						}
+					}
+					return {
+						isTrue: bool,
+						index: dirBlockIndex
+					};
+				},
+				
+				// 获取方位  index=大块的坐标   indexSmall=小块的下标（1, 3, 5, 7）
+				getDir(index, indexSmall) {
+					let currentBlockRotate = this.domList[index].style.transform.replace(/[^0-9]/ig, "") * 1 || 0;
+					let rotateNum = (currentBlockRotate / 90) % 4;
+					let dir = null;
+					if(rotateNum == 0) { 
+						if(indexSmall == 1) { dir = 'up' };
+						if(indexSmall == 3) { dir = 'left' };
+						if(indexSmall == 5) { dir = 'right' };
+						if(indexSmall == 7) { dir = 'down' };
+					}
+					if(rotateNum == 1) { 
+						if(indexSmall == 1) { dir = 'right' };
+						if(indexSmall == 3) { dir = 'up' };
+						if(indexSmall == 5) { dir = 'down' };
+						if(indexSmall == 7) { dir = 'left' };
+					}
+					if(rotateNum == 2) { 
+						if(indexSmall == 1) { dir = 'down' };
+						if(indexSmall == 3) { dir = 'right' };
+						if(indexSmall == 5) { dir = 'left' };
+						if(indexSmall == 7) { dir = 'up' };
+					}
+					if(rotateNum == 3) { 
+						if(indexSmall == 1) { dir = 'left' };
+						if(indexSmall == 3) { dir = 'down' };
+						if(indexSmall == 5) { dir = 'up' };
+						if(indexSmall == 7) { dir = 'right' };
+					}
+					return dir;
+				},
+			
+				// 获取某一块地中所有的渠道 index=大块地的下标
+				getBlockSewer(index) {
+					let list = this.map[index];
+					let arr = [];
+					if(list[1] != 0) { arr.push(1) };
+					if(list[3] != 0) { arr.push(3) };
+					if(list[5] != 0) { arr.push(5) };
+					if(list[7] != 0) { arr.push(7) };
+					return arr;
+				},
+			
+			}
+		})
+  </script>
+</body>
+</html>

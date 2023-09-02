@@ -1,0 +1,108 @@
+* { padding: 0; margin: 0; border: 0; }
+html, body { padding: 0; margin: 0; }
+div, span, p, button, a, input { font-size: 14px; color: #fff; box-sizing: border-box; }
+a { text-decoration: none; }
+html { background-color: rgb(255,255,255); font-family: comic sans MS; }
+
+
+.app {
+	width: 100vw;
+	height: 100vh;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	/* transform-style: preserve-3d;
+	perspective: 1000;
+	-webkit-perspective: 1000;
+	-moz-perspective: 1000;
+	-ms-perspective: 1000; */
+}
+
+.game {
+	position: relative;
+	/* padding: 74px 30px 10px; */
+	/* transform: rotateX(40deg); */
+	/* box-shadow: 20px 60px 40px 10px rgba(0,0,0,.5) inset; */
+}
+/* .game::before {
+	content: "";position: absolute;width: 2px;height: 79px;background-color: rgba(0,0,0,.2);transform: rotate(-23deg);left: 15px;top: 0;
+}
+.game::after {
+	content: "";position: absolute;width: 2px;height: 79px;background-color: rgba(0,0,0,.2);transform: rotate(23deg);right: 15px;top: 0;
+} */
+
+.game-tr {
+	display: flex;
+	flex-wrap: wrap;
+	position: relative;
+}
+.game-td {
+	width: 150px;
+	display: flex;
+	flex-wrap: wrap;
+	box-shadow: 0px 0px 4px 0px rgba(0,0,0,.3);
+	margin: 1px;
+	border-radius: 0px;
+	cursor: pointer;
+	transition: all .2s;
+	position: relative;
+}
+.game-block {
+	width: 50px;
+	height: 50px;
+	background-image: url('img/road.png');
+	position: relative;
+}
+.game-block img {
+	width: 100%;
+	height: 100%;
+}
+.game-block .waterHead {
+	width: 200%;
+	height: 200%;
+	position: absolute;
+	z-index: 2;
+	bottom: 2%;
+	left: -50%;
+}
+.game-block .tree {
+	width: 100%;
+	height: 100%;
+	position: absolute;
+	z-index: 2;
+	bottom: 30%;
+	left: 0;
+}
+.game-block .treeSmall {
+	transform: scale(1.2);
+}
+.game-block .treeBig {
+	transform: scale(2.2);
+}
+
+
+.bgWater {
+	background-image: url('img/water.gif');
+	background-size: cover;
+}
+
+.bgSoil {
+	background-image: url('img/soil.png');
+	background-size: cover;
+}
+
+.win {
+	position: absolute;
+	width: 100%;
+	height: 100%;
+	left: 0;
+	top: 0;
+	background-color: rgba(0,0,0,.6);
+	z-index: 99;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 70px;
+	font-weight: bold;
+	user-select: none;
+}

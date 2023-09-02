@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<title>冲刺贪吃蛇</title>
+		<link rel="shortcut icon" href="img/food.png" type="image/x-icon">
+		<script src="js/vue.min.js" type="text/javascript" charset="utf-8"></script>
+		<script src="js/index.js"></script>
+		<link rel="stylesheet" href="index.css">
+	</head>
+	<body>
+		<div id="app">
+			<div class="home">
+				<img src="img/bg1.jpg" alt="" class="bg">
+				<!-- 地图 -->
+				<div class="map">
+					<div v-for="(item1, index1) in map" :key="index1" class="mapRow">
+						<div v-for="(item2, index2) in item1" :key="index2" ref="zml" class="mapCol">
+							<!-- 砖块 -->
+							<div class="brick" v-if="item2 == 1"></div>
+							<!-- 苹果 -->
+							<img class="food" src="img/food.png" alt="" v-show="item2 == 2">
+							<!-- 蛇头 -->
+							<img class="food" src="img/head.png" alt="" v-show="item2 == 3" :style="{'transform': 'rotate('+ headRotate +'deg)'}">
+							<!-- 蛇身 -->
+							<img class="food" src="img/body.png" alt="" v-show="item2 == 4" :style="{'transform': 'rotate('+ headRotate +'deg)'}">
+							<!-- 尾巴 -->
+							<img class="food" src="img/5-1.png" alt="" v-show="item2 == '5-1'">
+							<img class="food" src="img/5-2.png" alt="" v-show="item2 == '5-2'">
+							<img class="food" src="img/5-3.png" alt="" v-show="item2 == '5-3'">
+							<img class="food" src="img/5-4.png" alt="" v-show="item2 == '5-4'">
+							<!-- 拐弯处 -->
+							<img class="food" src="img/6-1.png" alt="" v-show="item2 == '6-1'">
+							<img class="food" src="img/6-2.png" alt="" v-show="item2 == '6-2'">
+							<img class="food" src="img/6-3.png" alt="" v-show="item2 == '6-3'">
+							<img class="food" src="img/6-4.png" alt="" v-show="item2 == '6-4'">
+						</div>
+					</div>
+					<div class="gameMask" v-if="!isStart">
+						<span>按空格键开始/暂停</span>
+					</div>
+					<div class="gameMask" v-if="isStart && isStop">
+						<span>暂停</span>
+					</div>
+					<div class="gameMask" v-if="isOver">
+						<span>你撞到了！</span>
+					</div>
+				</div>
+				<div class="score" v-if="score >= 0">{{score}}</div>
+			</div>
+		</div>
+		<script>
+			const vm = new Vue({
+				el: '#app',
+				data() {
+					return {
+						map: [],						// 地图  0=空地  1=墙  2=食物  3=蛇头  4=蛇身  5 蛇尾  6 蛇拐弯处
+						row: 18,						// 行
+						col: 14,						// 列
+						score: 0, 					// 分数
+						snake: [], 					// 蛇
+						dir: 'right', 			// 移动方向 默认向右
+						speed: 150,					// 速度
+						isStart: false, 		// 是否开始
+						isStop: true,				// 是否暂停
+						isOver: false, 			// 判断游戏是否结束
+						movetimer: null, 		// 移动定时器
+					}
+				},
+				created() {
+					this.createInit();
+					document.addEventListener('keydown', event => {
+						const e = event || window.event || arguments.callee.caller.arguments[0];
+						if(this.isOver) { return };
+						// 空格游戏开始、暂停
+						if(e.keyCode == 32) {
+							this.playStart()
+						}
+						throttle(() => {
+							// 当蛇向右移动的时候，不能按左，向上的时候，不能按下，其他同理
+							if (e.keyCode == 37 && this.dir != 'right' && !this.isStop) {
+								this.dir = 'left'; //向左
+												
+							} else if (e.keyCode == 38 && this.dir != 'down' && !this.isStop) {
+								this.dir = 'up'; //向上
+												
+							} else if (e.keyCode == 39 && this.dir != 'left' && !this.isStop) {
+								this.dir = 'right'; //向右
+												
+							} else if (e.keyCode == 40 && this.dir != 'up' && !this.isStop) {
+								this.dir = 'down'; //向下
+												
+							}
+						}, this.speed / 2.5)
+					})
+				},
+				computed: {
+					// 蛇头旋转度数
+					headRotate() {
+						let rotate = 0;
+						if(this.dir == 'right') { rotate = 0; };
+						if(this.dir == 'down') { rotate = 90; };
+						if(this.dir == 'left') { rotate = 180; };
+						if(this.dir == 'up') { rotate = 270; };
+						return rotate;
+					}
+				},
+				methods: {
+					// 空格键开始游戏
+					playStart() {
+						if (this.isOver) {
+							this.isStart = false;
+							alert("游戏结束！请重新开始！");
+							return;
+						}
+						if(!this.isStart) {
+							this.isStart = true;
+							this.isStop = false;
+							this.snakeMove()
+							return;
+						}
+						
+						if(this.isStop) {
+							this.isStop = false;
+							this.snakeMove()
+						} else {
+							this.isStop = true;
+							clearInterval(this.movetimer);
+						}
+					},
+					
+					// 初始化
+					createInit() {
+						// 地图
+						for(let i = 0; i < this.row; i++) {
+							this.map[i] = [];
+							for (let j = 0; j < this.col; j++) {
+								this.map[i][j] = 0;
+							}
+						}
+						// 蛇
+						for (let i = 4; i > 0; i--) {
+							this.snake = [...this.snake, [1, i]];
+						}
+						// 墙体
+						let wall = [
+							// [9, 0], [9, 1], [9, 2], [9, 3], [9, 4], [9, 5],
+							// [9, 8], [9, 9], [9, 10], [9, 11],[9, 12], [9, 13]
+						];
+						if(wall.length) {
+							for(let i = 0; i < wall.length; i++) {
+								let [x, y] = wall[i];
+								this.map[x][y] = 1;
+							}
+						}
+						// 渲染蛇和食物
+						this.snakeStyle();
+						this.foodStyle();
+					},
+					
+					// 画蛇
+					// 蛇头(3)  蛇身(4)  蛇尾(5-1 5-2 5-3 5-4)  蛇拐弯处(6-1 6-2 6-3 6-4)
+					snakeStyle() {
+						// 蛇头
+						this.map[this.snake[0][0]][this.snake[0][1]] = 3
+						// 尾巴
+						// 我们需要比较最后两个数据，来断定尾巴的朝向
+						let [x1, y1] = this.snake[this.snake.length - 1];
+						let [x2, y2] = this.snake[this.snake.length - 2];
+						if(x1 == x2 && y1 < y2) { this.map[x1][y1] = '5-1' }
+						if(x1 == x2 && y1 > y2) { this.map[x1][y1] = '5-2' }
+						if(x1 > x2 && y1 == y2) { this.map[x1][y1] = '5-3' }
+						if(x1 < x2 && y1 == y2) { this.map[x1][y1] = '5-4' }
+						// 身体 
+						// 先把身体都用普通身体代替
+						for (let i = 1; i < this.snake.length - 1; i++) {
+							let [x, y] = this.snake[i];
+							this.map[x][y] = 4;
+						}
+						// 再去判断拐弯处
+						// 我们只要判断某一段身体的前一个和后一个就行了
+						for (let i = 1; i < this.snake.length - 1; i++) {
+							let [a, b] = this.snake[i];
+							let [a1, b1] = this.snake[i - 1];
+							let [a2, b2] = this.snake[i + 1];
+							if(((a1 < a2 && b1 > b2) || (a1 > a2 && b1 < b2)) && ((a < a1 && b == b1) || (a == a1 && b < b1))) { this.map[a][b] = '6-1' }
+							if(((a1 > a2 && b1 > b2) || (a1 < a2 && b1 < b2)) && ((a > a1 && b == b1) || (a == a1 && b < b1))) { this.map[a][b] = '6-2' }
+							if(((a1 > a2 && b1 > b2) || (a1 < a2 && b1 < b2)) && ((a < a1 && b == b1) || (a == a1 && b > b1))) { this.map[a][b] = '6-3' }
+							if(((a1 < a2 && b1 > b2) || (a1 > a2 && b1 < b2)) && ((a > a1 && b == b1) || (a == a1 && b > b1))) { this.map[a][b] = '6-4' }
+						}
+						
+						
+						this.$forceUpdate();
+					},
+
+					// 画食物
+					foodStyle() {
+						let arr = [];
+						this.map.forEach((item1, index1) => {
+							item1.forEach((item2, index2) => {
+								if(item2 == 0) {
+									arr.push({ x: index1, y: index2 })
+								}
+							})
+						})
+						let randomNum = Math.floor(Math.random() * arr.length)
+						let {x, y} = arr[randomNum];
+						// 给食物添加样式
+						this.map[x][y] = 2;
+						this.$forceUpdate();
+					},
+
+					//蛇移动
+					snakeMove() {
+						if(this.isOver) { return; }
+						this.movetimer = setInterval(() => {
+							// 首先定义一个行 和 列
+							let x = null;
+							let y = null;
+							// 判断蛇的方向
+							switch (this.dir) {
+								case 'right':
+									x = this.snake[0][0]; 		// 如果往右移动，则行不变，列++
+									y = this.snake[0][1] + 1;
+									break;
+								case 'down':
+									x = this.snake[0][0] + 1;
+									y = this.snake[0][1];
+									break;
+								case 'left':
+									x = this.snake[0][0];
+									y = this.snake[0][1] - 1;
+									break;
+								case 'up':
+									x = this.snake[0][0] - 1;
+									y = this.snake[0][1];
+									break;
+							}
+							// 撞到墙
+							// 判断是否超过row、col临界值
+							if(x < 0 || x > this.row - 1 || y < 0 || y > this.col - 1 || this.map[x][y] == 1) {
+								console.log('撞到墙了')
+								this.isOver = true;
+								clearInterval(this.movetimer);
+								return;
+							}
+							// 撞到自己了
+							// 判断头部是否与身体其他部位重合
+							let arrX = this.snake.map(item => item[0]);
+							let arrY = this.snake.map(item => item[1]);
+							let bodys = [4,'5-1','5-2','5-3','5-4','6-1','6-2','6-3','6-4'];
+							if(arrX.includes(x) && arrY.includes(y) && bodys.includes(this.map[x][y])) {
+								console.log('撞到自己了')
+								this.isOver = true;
+								clearInterval(this.movetimer);
+								return;
+							}
+							
+							// 如果什么都没撞到，则需要判断是否吃到苹果了
+							// 首先无论有没有吃到苹果，都在蛇数组开头加一节
+							this.snake.unshift([x, y]);
+							// 如果没吃到，则就会把最后一个尾巴清掉
+							if (this.map[x][y] != 2) {
+								const [a, b] = this.snake.pop();
+								this.map[a][b] = 0;
+							} else {
+								// 如果吃到了，那就不用减去最后一个，相当于直接把苹果变成了蛇头
+								this.score += 1;
+								this.foodStyle();
+							}
+							this.snakeStyle();		
+						}, this.speed);
+					}
+				}
+			})
+		</script>
+	</body>
+</html>

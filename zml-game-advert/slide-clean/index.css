@@ -1,0 +1,52 @@
+* { padding: 0; margin: 0; border: 0; }
+html, body { padding: 0; margin: 0; }
+div, span, p, button, a, input { font-size: 14px; color: #000; box-sizing: border-box; }
+a { text-decoration: none; }
+html { background-color: rgb(247, 246, 242); font-family: comic sans MS; }
+
+.game {
+	height: 100vh;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+}
+
+.box {
+	border-radius: 46px;
+	border-width: 54px;
+	border-style: solid;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	position: relative;
+}
+
+.list {
+	background-color: rgb(247, 246, 242);
+	border-radius: 20px;
+	overflow: hidden;
+	margin: -20px;
+}
+
+.tr {
+	display: flex;
+}
+
+.td {
+	width: 20px;
+	height: 20px;
+	background-color: transparent;
+	border-radius: 4px;
+}
+
+
+/* 关卡提示 */
+.levelTip {
+	font-weight: bold;
+	font-size: 30px;
+	margin-bottom: 20px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}

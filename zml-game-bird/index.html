@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<title>管道小鸟</title>
+		<link rel="shortcut icon" href="img/bird.gif" type="image/x-icon">
+		<link rel="stylesheet" href="index.css">
+		<script src="js/vue.min.js"></script>
+	</head>
+	<body>
+		<div id="app">
+			<div class="bird-game">
+				<div class="bird-box">
+					<img src="img/bird-bg.png" class="bg" />
+					<div class="bird-map">
+						<!-- 分数 -->
+						<div class="bird-number">{{ number }}</div>
+						<!-- 开始游戏 -->
+						<div class="bird-start" v-if="!isStart">开始游戏</div>
+						<!-- 鸟 -->
+						<div 
+							class="bird hidden" 
+							:class="{'bird-move': !isStart}" 
+							:style="{'top': bird.top + 'px', 'left': bird.left + 'px'}"
+						>
+							<img src="img/bird.gif" mode="widthFix" />
+						</div>
+						<!-- 管道 -->
+						<div class="bird-pipe" v-for="(item,index) in pipeList" :key="index" :style="{'right': item.pRight + 'px', 'width': pipe.width+'px'}">
+							<div class="bird-pipe-top" :style="{'top': item.pTop +'px'}">
+								<img src="img/pipe_t.png" width="100%" mode="widthFix" />
+							</div>
+							<div class="bird-pipe-bottom" :style="{'bottom': item.pBottom + 'px'}">
+								<img src="img/pipe_b.png" width="100%" mode="widthFix" />
+							</div>
+						</div>
+					</div>
+				</div>
+				<!-- 地板 -->
+				<div class="bird-land">
+					<div class="land-1"></div>
+					<div class="land-2"></div>
+					<div class="land-box land-move"></div>
+					<div class="land-3"></div>
+					<div class="land-4"></div>
+				</div>
+			</div>
+		</div>
+		<script>
+			const vm = new Vue({
+				el: '#app',
+				data() {
+					return {
+						isStart: false,				// 游戏是否开始
+						isEnd: false,					// 游戏是否结束
+						number: 0,						// 分数
+						map:{	width: 438, height: 600 },// 地图
+						bird:{								// 小鸟
+							width: 34,
+							height: 24,
+							left: 80,
+							top: 300,
+							speedStart: 1, 			// 初始速度
+							speedPlus: 0.03, 		// 加速度
+							speedMax: 4,				// 上限速度
+							flyMaxHeight: 50,		// 每点一次飞行的最大高度
+							flyStageHeight: 5,	// 飞行的阶梯增加高度
+							flyRelaHeight: 0,		// 当前飞行的相对高度,也就是飞行的那个过程，高度是多少，因为有时没到达顶部，玩家又点一次
+							flyDirect: null,		// up上升，down下落
+						},	
+						flyTimer: null,
+						pipe:{								// 管道
+							width: 45,
+							height: 364,
+						},
+						pipeVerticel: 100,		// 上下管道之间的垂直距离
+						pipeDistance: 200,		// 左右管道之间的水平距离
+						pipeList: [						// 存放管道数组
+							{ pRight: -150, pTop: -200, pBottom: -200 }
+						], 	
+					}
+				},
+				mounted() {
+					document.addEventListener('keydown', (e) => {
+						if(e.keyCode == 32) {
+							this.start()
+						}
+					})
+				},
+				methods: {
+					// 游戏开始
+					start(){
+						if(this.isEnd){
+							console.log('游戏已结束');
+							return;
+						}
+						if(this.flyTimer){
+							clearInterval(this.flyTimer);
+							this.flyTimer = null;
+						}
+						this.isStart = true;
+						this.bird.flyDirect = 'up';
+						this.flyTimer = setInterval(()=>{
+							this.birdFly();
+							this.pipeMove();
+						}, 10)
+					},
+					
+					// 小鸟运动
+					birdFly(){
+						// 上升
+						if(this.bird.flyDirect == 'up'){
+							if(this.bird.flyRelaHeight <= this.bird.flyMaxHeight){
+								this.bird.top -= this.bird.flyStageHeight;
+								this.bird.flyRelaHeight += this.bird.flyStageHeight;
+							}else{
+								this.bird.flyDirect = 'down';
+								this.bird.flyRelaHeight = 0;
+								this.bird.speedStart = 1;
+							}
+						}
+						// 到达顶部
+						if(this.bird.top <= 0){
+							this.bird.top = 0;
+							this.die();
+						}
+						// 下降
+						if(this.bird.flyDirect == 'down'){
+							this.bird.top = this.bird.top + this.bird.speedStart * this.bird.speedStart;
+							if(this.bird.speedStart < this.bird.speedMax){
+								this.bird.speedStart += this.bird.speedPlus;
+							}
+						}
+						// 到达底边
+						if(this.bird.top >= this.map.height - this.bird.height){
+							this.bird.top = this.map.height - this.bird.height;
+							this.die();
+						}
+					},
+					
+					// 管道移动 添加删除管道
+					pipeMove(){
+						// 如果数组中的最后一个到达右边的时候，增加一个
+						if(this.pipeList[this.pipeList.length - 1].pRight >= 0){
+							// 因为固定了上下管道距离，所以我们只要随机上下其中一个管道的距离值，再用整体高度-上下管道的距离-随机距离 = 另外一个管道的距离
+							let pipeRandom = this.random(50, 300);
+							let obj = {
+								pRight: -(this.pipeList[this.pipeList.length - 1].pRight*1 + this.pipeDistance*1),
+								pTop: -pipeRandom,
+								pBottom: -(this.map.height*1 - pipeRandom*1 - this.pipeVerticel*1),
+							};
+							this.pipeList.push(obj);
+						}
+						// 如果第一个到达左边的时候，删除第一个
+						if(this.pipeList[0].pRight >= this.map.width){
+							this.pipeList.shift();
+						}
+						// 遍历管道移动
+						for(let i = 0; i < this.pipeList.length; i++){
+							let birdMouthRight = this.map.width - this.bird.width - this.bird.left;	// 鸟嘴到右边的距离
+							// 判断是否碰撞管道 (注意：已经飞过的管道需要去除)
+							// 当没有飞过当前的管道
+							if(this.pipeList[i].pRight <= this.map.width - this.bird.left){
+								// 有咩有撞到上管道
+								if(
+									(this.pipeList[i].pRight + this.pipe.width) >= birdMouthRight && 
+									(this.pipe.height + this.pipeList[i].pTop) >= this.bird.top
+								){
+									this.die();
+									return;
+								}
+								// 有咩有撞到下管道
+								if(
+									(this.pipeList[i].pRight + this.pipe.width) >= birdMouthRight && 
+									(this.pipe.height + this.pipeList[i].pBottom) >= (this.map.height - this.bird.height - this.bird.top)
+								){
+									this.die();
+									return;
+								}
+							}
+							// 判断分数，也就是刚好飞过某一个管道
+							console.log(this.pipeList[i].pRight);
+							const pRight = Math.floor(this.pipeList[i].pRight);
+							if(pRight === 358){
+								this.number++;
+							}
+							this.pipeList[i].pRight += 1.2;
+						}
+					},
+					
+					// 死亡
+					die(){
+						clearInterval(this.flyTimer)
+						this.isEnd = true;
+						// alert("你死了");
+						console.log('你死了');
+						// location.reload()
+					},
+					
+					// 随机数
+					random(min, max) {
+						if (min >= 0 && max > 0 && max >= min) {
+							let gab = max - min + 1;
+							return Math.floor(Math.random() * gab + min);
+						} else {
+							return 0;
+						}
+					}
+				}
+			});
+		</script>
+	</body>
+</html>

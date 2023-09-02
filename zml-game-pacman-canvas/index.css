@@ -1,0 +1,27 @@
+* { padding: 0; margin: 0; }
+#app {
+  width: 100%;
+  height: 100vh;
+  padding-top: 100px;
+  position: fixed;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-family: comic sans MS;
+  background: linear-gradient(0deg, rgb(17, 51,161) 0%, rgb(136,34,195) 100%);
+}
+.title {
+  color: lightgray;
+  margin-bottom: 30px;
+  font-size: 50px;
+  user-select: none;
+}
+
+.game {
+  background-color: #000;
+}
+
+#myCanvas {
+  display: block;
+  box-shadow: 10px 10px 20px black;
+}

@@ -1,0 +1,170 @@
+* {
+	padding: 0;
+	margin: 0;
+	border: 0;
+}
+body, html {
+	background-color: rgb(212,219,230);
+	font-size: 16px;
+}
+div, span, p, button {
+	box-sizing: border-box;
+}
+#app {
+	width: 100vw;
+	height: 100vh;
+	overflow: hidden;
+}
+.tetris {
+	width: 580px;
+	height: 930px;
+	overflow: hidden;
+	display: flex;
+}
+.tetris-box {
+	position: absolute;
+	width: 274px;
+	height: 355px;
+	top: 302px;
+	left: 135px;
+	z-index: 2;
+	background-color: transparent;
+	border-radius: 30px;
+	overflow: hidden;
+}
+.tetris-bg {
+	height: 100%;
+}
+
+/* 游戏区 */
+.map {
+	overflow: hidden;
+	display: flex;
+	flex-direction: column;
+	width: 100%;
+	height: 100%;
+}
+.map .tr {
+	flex: 1;
+	display: flex;
+}
+.map .tr .td {
+	flex: 1;
+}
+
+/* 遮罩 */
+.mask {
+	position: absolute;
+	width: 100%;
+	height: 100%;
+	top: 0;
+	left: 0;
+	z-index: 10;
+	background-color: rgba(0,0,0,.6);
+	border-radius: 30px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	color: #fff;
+	letter-spacing: 4px;
+	user-select: none;
+	line-height: 1;
+}
+.mask span {
+	font-size: 25px;
+	font-weight: bold;
+}
+
+/* 下一个 */
+.tetris-next {
+	width: 60px;
+	height: 60px;
+	position: absolute;
+	z-index: 10;
+	left: 484px;
+	top: 330px;
+	border-radius: 20px;
+	display: flex;
+	flex-direction: column;
+	filter: opacity(.6);
+}
+.tetris-next .tetris-next-tr {
+	flex: 1;
+	display: flex;
+}
+.tetris-next .tetris-next-tr .tetris-next-td {
+	flex: 1;
+}
+
+.tetris-score {
+	width: 70px;
+	text-align: center;
+	position: absolute;
+	left: 25px;
+	top: 492px;
+	z-index: 10;
+	color: #b0cfff;
+	filter: opacity(.6);
+	font-size: 30px;
+	font-weight: bold;
+	transform: rotate(14deg);
+	text-shadow: -4px 4px 4px rgba(0,0,0,.5);
+}
+
+/* 定义方块样式 */
+.brick {
+	width: 100%;
+	height: 100%;
+	overflow: hidden;
+	border: 4px solid;
+}
+.brick.brick-1 { 
+	background: linear-gradient(to bottom, rgb(145,207,249), rgb(55,117,212));
+	border-top-color: rgb(214,238,254);
+	border-right-color: rgb(27,114,231);
+	border-bottom-color: rgb(13,78,210);
+	border-left-color: rgb(144,206,248);
+}
+.brick.brick-2 { 
+	background: rgb(143,68,255);
+	border-top-color: rgb(200,173,246);
+	border-right-color: rgb(67,0,198);
+	border-bottom-color: rgb(54,0,186);
+	border-left-color: rgb(121,44,238);
+}
+.brick.brick-3 { 
+	background: rgb(255,93,68);
+	border-top-color: rgb(246,180,173);
+	border-right-color: rgb(200,14,2);
+	border-bottom-color: rgb(198,7,0);
+	border-left-color: rgb(237,68,44);
+}
+.brick.brick-4 { 
+	background: rgb(213, 63, 173);
+	border-top-color: rgb(255, 75, 207);
+	border-right-color: rgb(125, 36, 103);
+	border-bottom-color: rgb(86, 25, 69);
+	border-left-color: rgb(244, 72, 201);
+}
+.brick.brick-5 { 
+	background: rgb(85, 170, 127);
+	border-top-color: rgb(127, 255, 189);
+	border-right-color: rgb(56, 112, 82);
+	border-bottom-color: rgb(40, 81, 60);
+	border-left-color: rgb(100, 203, 150);
+}
+.brick.brick-6 { 
+	background: rgb(209, 209, 0);
+	border-top-color: rgb(255, 255, 0);
+	border-right-color: rgb(170, 170, 0);
+	border-bottom-color: rgb(131, 131, 0);
+	border-left-color: rgb(229, 229, 0);
+}
+.brick.brick-7 { 
+	background: rgb(193, 0, 3);
+	border-top-color: rgb(255, 0, 4);
+	border-right-color: rgb(150, 0, 2);
+	border-bottom-color: rgb(93, 0, 1);
+	border-left-color: rgb(229, 0, 3);
+}
+

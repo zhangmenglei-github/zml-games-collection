@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<title>人机五子棋</title>
+		<link rel="shortcut icon" href="img/black.png" type="image/x-icon">
+		<link rel="stylesheet" href="index.css">
+		<script src="js/vue.min.js"></script>
+	</head>
+	<body>
+		<div id="app">
+			<div class="index">
+			  <span v-show="false">{{ zml }}</span>
+			  <div class="indexBox">
+			   <div class="header">
+			     <div>玩 家<img src="img/black.png" alt=""></div>
+			     <span>VS</span>
+			     <div>电 脑<img src="img/white.png" alt=""></div>
+			   </div>
+			   <div class="chessboard">
+			      <div class="chessBox">
+			        <!-- 棋盘渲染样式网格 （可见）-->
+			        <div class="chessBox-style">
+			            <table>
+			              <tbody>
+			                <tr v-for="(n,index) in 14" :key="index">
+			                  <td v-for="(m,index) in 14" :key="index"></td>
+			                </tr>
+			              </tbody>
+			            </table>
+			            <span class="centerPoint"></span>
+			            <span class="point1"></span>
+			            <span class="point2"></span>
+			            <span class="point3"></span>
+			            <span class="point4"></span>
+			        </div>
+			        <!-- 落子网格 （不可见）-->
+			        <div class="chessBox-chess">
+			            <table>
+			              <tbody>
+			                <tr v-for="(x,index1) in this.chessBoard" :key="index1">
+			                  <td v-for="(y,index2) in x" :key="index2">
+			                    <button @click="handleClick(index1,index2)">
+			                       <img :src="player[y]" alt="">
+			                    </button>
+			                  </td>
+			                </tr>
+			              </tbody>
+			            </table>
+			        </div>
+			      </div>
+			   </div>
+			   <div class="function">
+			      <button @click="start">重新开始</button>
+			      <button @click="regret">悔棋</button>
+			      <button @click="admit">认输</button>
+			      <button @click="changePattern">切换模式</button>
+			   </div>
+			  </div>
+			</div>
+		</div>
+		<script>
+			const vm = new Vue({
+				el: '#app',
+				data(){
+				  return{
+				    zml: true, //此变量无任何用处，是为了更新视图，改变二维数组所用
+				    player:{   //玩家渲染
+				      0:null,
+				      1:'img/black.png',
+				      2:'img/white.png',
+				    },
+				    chessBoard: [],  //棋盘数组
+				    isMe: true, // 下一个该谁下
+				    over: false, //是否结束
+				    wins: [], //赢法数组
+				    count: 0, //赢法总数
+				    mywins:[],  //玩家赢法统计数组
+				    computerwins:[], //电脑赢法统计数组
+				    // pattern: true,  //模式切换 （玩家vs玩家）（玩家vs电脑）
+				  }
+				},
+				created(){
+				  // 初始化
+				  this.init();
+				},
+				methods:{
+				  init(){
+				    // 填充数组
+				    for(let i = 0; i < 15; i++){
+				      this.chessBoard[i] = [];
+				      for(let j = 0; j < 15; j++){
+				        this.chessBoard[i][j] = 0;
+				      }
+				    }
+				    // console.log(this.chessBoard);
+				
+				    // 赢法数组初始化
+				    for(let i = 0; i < 15; i++){
+				      this.wins[i] = [];
+				      for(let j = 0; j < 15; j++){
+				        this.wins[i][j] = [];
+				      }
+				    }
+				
+				    // 横向赢法
+				    for(let i = 0; i < 15; i++){
+				      for(let j = 0; j < 11; j++){
+				        for(let k = 0; k < 5; k++){
+				          this.wins[i][j+k][this.count] = true;
+				        }
+				        this.count++;
+				      }
+				    }
+				    // 竖向赢法
+				    for(let i = 0; i < 15; i++){
+				      for(let j = 0; j < 11; j++){
+				        for (let k = 0; k < 5; k++) {
+				          this.wins[j+k][i][this.count] = true;
+				        }
+				        this.count++;
+				      }
+				    }
+				
+				    // 正斜（左上-右下）
+				    for (let i = 0; i < 11; i++) {
+				      for(let j = 0; j < 11; j++){
+				        for(let k = 0; k < 5; k++){
+				          this.wins[i+k][j+k][this.count] = true;
+				        }
+				        this.count++;
+				      }
+				    }
+				    // 反斜（右上-左下）
+				    for(let i = 0; i < 11; i++){
+				      for(let j = 14; j > 3; j--){
+				        for(let k = 0; k < 5; k++){
+				          this.wins[i+k][j-k][this.count] = true;
+				        }
+				        this.count++;
+				      }
+				    }
+				
+				    // 赢法统计数组
+				    for(let i = 0; i < this.count; i++){
+				      this.mywins[i] = 0;
+				      this.computerwins[i] = 0;
+				    }
+				
+				  },
+				
+				  //玩家落子
+				  handleClick(x,y){
+				    //如果当前位置有子 或者 有获胜者 ，则不可再点击
+				    if(this.chessBoard[x][y] || this.over){
+				      return;
+				    }
+				    //如果该点没有子，可以落子
+				    if(this.chessBoard[x][y] == 0){
+				
+				      // this.chessBoard[x][y] = 'X'; // 如果单独用此方法，vue不会检测到数组的变化，所以数据变，视图不会更新
+				      this.zml = !this.zml;       //加上这个，让视图去重新渲染，然后带动二维数组实时更新渲染
+				      this.chessBoard[x][y] = 1;
+				
+				      //判断输赢 (为了当第五颗子落完，在判断，所以用一个定时器)
+				      setTimeout(()=>{
+				        for(let k = 0; k < this.count; k++){ //遍历所有赢法
+				          if(this.wins[x][y][k] == true){  //判断当其中一种赢法中有子的时候，就会去判断是否会有五颗， 没有的话，就会去判断下一种赢法
+				            this.mywins[k]++;
+				            this.computerwins[k] = 6;
+				            if(this.mywins[k] === 5){
+											alert('你赢了')
+				              this.over = true;
+				            }
+				          }
+				        }
+				      },50)
+				
+				      //如果玩家没赢  则游戏继续  接下来由电脑落子
+				      setTimeout(()=>{
+				        if(!this.over){
+				          this.isMe = !this.isMe;
+				          this.computerAi();
+				        }
+				      },100)
+				    }
+				  },
+				
+				  // 电脑落子
+				  computerAi(){
+				    /*
+				     * 电脑落子，我们就利用AI算法中的 权值法  来判断哪一点的分值最高，对电脑自己的的利益最大。
+				     * 此时需要考虑自己和玩家的权重值， 来判断是进行围堵，还是进行有利于自身的落子
+				     *
+				     */
+				
+				    const myscore = []; //对于玩家的每一空点的分值数组
+				    const computerscore = []; //对于电脑的每一个空点的分值数组
+				    let max = 0; //最大分值。
+				    let x = 0, y = 0;  //决定最后电脑所落子的点
+				
+				    //初始化 玩家和电脑  每个点的分值  数组
+				    for(let i = 0; i < 15; i++){
+				      myscore[i] = [];
+				      computerscore[i] = [];
+				      for(let j = 0; j < 15; j++){
+				        myscore[i][j] = 0;
+				        computerscore[i][j] = 0;
+				      }
+				    }
+				
+				    // 遍历棋盘
+				    for(let i = 0; i < 15; i++){
+				      for(let j = 0; j < 15; j++){
+				        // 是否可落子
+				        if(this.chessBoard[i][j] === 0){
+				
+				           for (let k = 0; k < this.count; k++) {
+				             // 判断当前赢法中是否含有双方棋子
+				             if(this.wins[i][j][k] == true){
+				
+				                // 玩家
+				                if(this.mywins[k] === 1){  //说明当前这个空格的赢法中包含一个玩家的子 ，那么就给当前这个空格加分
+				                  myscore[i][j] += 100;
+				                }else if(this.mywins[k] === 2){
+				                  myscore[i][j] += 400;
+				                }else if(this.mywins[k] === 3){
+				                  myscore[i][j] += 800;
+				                }else if(this.mywins[k] === 4){
+				                  myscore[i][j] += 2000;
+				                }
+				
+				                // 电脑
+				                if(this.computerwins[k] === 1){
+				                  computerscore[i][j] += 150;
+				                }else if(this.computerwins[k] === 2){
+				                  computerscore[i][j] += 450;
+				                }else if(this.computerwins[k] === 3){
+				                  computerscore[i][j] += 950;
+				                }else if(this.computerwins[k] === 4){
+				                  computerscore[i][j] += 10000;
+				                }
+				
+				
+				                // 之所以电脑的分比玩家定的高， 是因为如果自己的棋比玩家的好，首先要考虑自己的棋。
+				
+				             }
+				           }
+				
+				          // 比较玩家在某点的分数  （先看玩家在该点的分值）
+				          if(myscore[i][j] > max){
+				            max = myscore[i][j];
+				            x = i;
+				            y = j;
+				          }else if(myscore[i][j] === max){
+				            // 如果玩家在当前点的分跟前一个相等，就再跟电脑自身在该点的值进行比较
+				            // 如果电脑在当前点，比在上一个点的分大，说明电脑下这个点的优势更大， 以此类推，推出所有点的结果
+				            if(computerscore[i][j] > computerscore[x][y]){
+				              x = i;
+				              y = j;
+				            }
+				          }
+				
+				          // 比较电脑在某点的分数  (比较结果同上)
+				          if(computerscore[i][j] > max){
+				            max = computerscore[i][j];
+				            x = i;
+				            y = j;
+				          }else if(computerscore[i][j] === max){
+				
+				            if(myscore[i][j] > myscore[x][y]){
+				               x = i;
+				               y = j;
+				            }
+				          }
+				
+				
+				        }
+				      }
+				    }
+				
+				    // 把最佳点占领
+				    this.zml = !this.zml;  //此作用是为了，下完子实时更新视图
+				    this.chessBoard[x][y] = 2;
+				
+				    // 判断电脑是否获胜 (同上---玩家)
+				    setTimeout(()=>{
+				      for(let k = 0; k < this.count; k++){
+				        if(this.wins[x][y][k] == true){
+				          this.computerwins[k]++;
+				          this.mywins[k] = 6;
+				          if(this.computerwins[k] === 5){
+				            // alert("电脑赢了");
+				            alert('电脑赢了')
+				            this.over = true;
+				          }
+				        }
+				      }
+				    },100);
+				
+				    if(!this.over){
+				      this.isMe = !this.isMe;
+				    }
+				
+				
+				  },
+				
+				  // 重新开始
+				  start(){
+				    this.chessBoard = [];
+				    this.isMe = true;
+				    this.over = false;
+				    this.init();
+				  },
+				
+				  // 悔棋
+				  regret(){},
+				
+				  // 认输
+				  admit(){
+				    if(this.over){
+							alert('游戏已结束')
+				    }else{
+				      this.over = true;
+							alert('你认输了，电脑赢了')
+				    }
+				  },
+				
+				  // 切换模式
+				  changePattern(){
+				    this.pattern = !this.pattern;
+				  }
+				}
+			});
+			
+		</script>
+	</body>
+</html>

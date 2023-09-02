@@ -1,0 +1,114 @@
+* {
+	margin: 0;
+	padding: 0;
+	border: 0;
+}
+
+div,
+p,
+span,
+button {
+	box-sizing: border-box;
+}
+
+.bird-game {
+	width: 438px;
+	height: 100vh;
+	background-color: #DED895;
+	position: relative;
+	display: flex;
+	flex-direction: column;
+}
+
+.bird-box {
+	width: 100%;
+	height: 600px;
+	background-color: rgb(0, 135, 147);
+	position: relative;
+}
+
+.bird-map {
+	position: absolute;
+	width: 100%;
+	height: 100%;
+	top: 0;
+	right: 0;
+	bottom: 0;
+	left: 0;
+	z-index: 2;
+	overflow: hidden;
+}
+
+/* 游戏背景 */
+.bg {
+	width: 438px;
+	height: 600px;
+	display: block;
+}
+
+.bird { width: 34px;height: 24px; position: absolute;transition: transform .4s;}
+.bird img { display: block; }
+
+.bird-number {
+	position: absolute;
+	font-size: 35px;
+	color: #fff;
+	font-weight: bold;
+	left: 50%;
+	transform: translateX(-50%);
+	top: 30px;
+	text-shadow: 4px 4px 2px rgba(0, 0, 0, 1);
+	z-index: 999;
+}
+
+.bird-start {
+	position: absolute;
+	font-size: 40px;
+	color: rgb(47, 227, 43);
+	font-weight: bold;
+	left: 50%;
+	transform: translateX(-50%);
+	top: 150px;
+	text-shadow: 2px 2px 2px rgba(255, 255, 255, 1);
+}
+
+.bird-pipe {
+	position: absolute;
+	top: 0;
+	bottom: 0;
+}
+
+.bird-pipe-bottom,
+.bird-pipe-top {
+	position: absolute;
+	width: 100%;
+}
+
+/* 小鸟上下摆动 */
+.bird-move {
+	animation: ani_bird .75s infinite cubic-bezier(0.215, 0.61, 0.355, 1);
+}
+
+@keyframes ani_bird {
+	0% {transform: translateY(0);}
+	50% {transform: translateY(-10px);}
+	100% {transform: translateY(0);}
+}
+
+/* 地面 */
+.bird-land {flex: 1;}
+.bird-land .land-box {
+	width: 100%;height: 20px;
+	background: linear-gradient(-45deg, #9BE557 25%, #73BF2E 0%, #73BF2E 50%, #9BE557 0%, #9BE557 75%, #73BF2E 0%);
+	background-size: 40px 40px;background-position: 250% 0;
+}
+.bird-land .land-1 {width: 100%;height: 2px;background-color: #523546;}
+.bird-land .land-2 {width: 100%;height: 2px;background-color: #DEF886;}
+.bird-land .land-3 {width: 100%;height: 2px;background-color: #558121;}
+.bird-land .land-4 {width: 100%;height: 2px;background-color: #E0B24E;}
+.land-move { animation: ani_land 8.5s linear infinite; }
+
+@keyframes ani_land {
+	0% {background-position: 250% 0;}
+	100% {background-position: 0 0;}
+}

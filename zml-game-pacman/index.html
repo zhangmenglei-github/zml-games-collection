@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<title>吃豆人</title>
+		<link rel="stylesheet" href="css/index.css">
+		<script src="js/vue.min.js"></script>
+		<script src="js/map.js"></script>
+	</head>
+	<body>
+		<div id="app">
+			<div class="game">
+				<!-- 游戏地图 -->
+				<div class="map">
+					<div class="tr" v-for="(item1,index1) in list">
+						<div class="td" v-for="(item2,index2) in item1">
+							<!-- 墙 -->
+							<div class="wall" v-if="item2 == 0"></div>
+							<!-- 金币 -->
+							<div class="beans" v-if="item2 == 2"></div>
+							<!-- 金币 -->
+							<div class="beans-big" v-if="item2 == 5"></div>
+						</div>
+					</div>
+					<!-- 精灵 -->
+					<div class="spirit" :style="{'transform': 'rotate('+ spiritRotate +'deg)', 'left': left + 'px', 'top': top + 'px', 'transition-duration': speed + 'ms'}"></div>
+					<!-- 怪兽 -->
+					<div class="monster" :class="{'isWeak': isWeak}" :style="{'left': item.left + 'px', 'top': item.top + 'px', 'transition-duration': speed_monster + 'ms'}" v-for="(item,index) in monster">
+						<img :src="'img/ghost'+ (index + 1) +'.png'" alt="" v-if="item.show">
+					</div>
+					<!-- 弹框 -->
+					<div class="mask" v-show="isOver && (isWin === true || isWin === false)">
+						<div style="color: #fff; font-size: 70px;">{{ isWin === true ? 'You Win!': 'You Lose!' }}!</div>
+					</div>
+				</div>
+				<div class="info">
+					<div class="name">Pac-Man</div>
+					<div class="rule">
+						<p>游戏规则：</p>
+						<p>1. 按空格开始游戏</p>
+						<p>2. 吃完所有金币或者打败全部怪物，即可获胜进入下一关</p>
+						<p>3. 先打败怪物的话，即可获得所有金币</p>
+						<p>4. 小豆豆+1分、闪光豆豆+5分、怪兽+10分</p>
+						<p>5. 吃闪光豆豆会使怪物呈现弱化状，尽情享用吧</p>
+					</div>
+					<div class="score">
+						<span>SCORE</span>
+						{{ score }}
+					</div>
+				</div>
+			</div>
+		</div>
+		<script>
+			const vm = new Vue({
+				el: '#app',
+				data() {
+					return {
+						allLevel: [level_1],		// 全部关卡
+						list: [], 							// 0=墙 1=路 2=金币 3=吃豆人 4=怪物 5=大金币
+						list_detail: [],				// 存放每个点的详细数据
+						row: 30,								// 地图默认30行
+						col: 21,								// 地图默认20列
+						location: [1, 1],				// 吃豆人的坐标
+						dir: 'right',						// 吃豆人的方向
+						left: 30,								// 吃豆人左距离
+						top: 30,								// 吃豆人上距离
+						speed: 100,							// 速度
+						score: 0,								// 分数		金币+1  大金币+5  怪物+10
+						timer: null,						// 吃豆人定时器
+						isStart: false,					// 是否开始
+						isOver: false,					// 是否结束
+						isWin: null,						// 是否 赢了
+						monster: [							// 怪物数组
+							{ location: [17, 8], left: 0, top: 0, dir: 'right', show: true },
+							{ location: [17, 9], left: 0, top: 0, dir: 'up', show: true },
+							{ location: [17, 10], left: 0, top: 0, dir: 'up', show: true },
+							{ location: [17, 11], left: 0, top: 0, dir: 'left', show: true },
+						],
+						timer_monster: null,		// 怪物定时器
+						speed_monster: 300,			// 怪物速度
+						isWeak: false,					// 弱化怪物
+						weakTime: 5,						// 弱化时间
+						timer_weak: null,				// 弱化定时器
+					}
+				},
+				created() {
+					this.createMap();
+				},
+				mounted() {
+					this.dressUpMap();
+					this.onKeyBoard();
+					this.drawSpirit();
+					this.drawMonster();
+				},
+				computed: {
+					spiritRotate() {
+						let rotate = 0;
+						switch (this.dir){
+							case 'left': rotate = 180; break;
+							case 'up': rotate = -90; break;
+							case 'right': rotate = 0; break;
+							case 'down': rotate = 90; break;
+						}
+						return rotate;
+					}
+				},
+				methods: {
+					// 生成地图
+					createMap() {
+						const level1 = this.allLevel[0];
+						const arr = [];
+						for(let i = 0; i < level1.length; i++) {
+							arr[i] = [];
+							for(let j = 0; j < level1[0].length; j++) {
+								arr[i].push({
+									left: j * 30,
+									top: i * 30
+								})
+							}
+						}
+						this.list_detail = JSON.parse(JSON.stringify(arr));
+						this.list = level1;
+					},
+
+					// 打扮地图，
+					dressUpMap() {
+						const wallList = []; // 获取砖块
+						const trList = document.querySelectorAll('.tr'); // 获取所有tr元素
+						for(let i = 0; i < this.list.length; i++) {
+							for(let j = 0; j < this.list[0].length; j++) {
+								if(this.list[i][j] === 0) {
+									wallList.push([i, j])
+								}
+							}
+						}
+						for(let i = 0; i < wallList.length; i++) {
+							let [x, y] = wallList[i];
+							if(this.list[x][y] === 0) {
+								// 把墙壁砖块与砖块之间的间隙去除
+								if(x - 1 >= 0 && this.list[x - 1][y] === 0) {
+									trList[x].childNodes[y].childNodes[0].style.borderTop = 0;
+								}
+								if(x + 1 <= this.row - 1 && this.list[x + 1][y] === 0) {
+									trList[x].childNodes[y].childNodes[0].style.borderBottom = 0;
+								}
+								if(y - 1 >= 0 && this.list[x][y - 1] === 0) {
+									trList[x].childNodes[y].childNodes[0].style.borderLeft = 0;
+								}
+								if(y + 1 <= this.col - 1 && this.list[x][y + 1] === 0) {
+									trList[x].childNodes[y].childNodes[0].style.borderRight = 0;
+								}
+								// 把砖块的角磨平
+								if(x-1 >= 0 && y-1 >= 0 && this.list[x-1][y] !== 0 && this.list[x][y-1] !== 0) {
+									trList[x].childNodes[y].childNodes[0].style.borderTopLeftRadius = '10px';
+								}
+								if(x-1 >= 0 && y+1 <= this.col-1  && this.list[x-1][y] !== 0 && this.list[x][y+1] !== 0) {
+									trList[x].childNodes[y].childNodes[0].style.borderTopRightRadius = '10px';
+								}
+								if(x+1 <= this.row-1 && y-1 >= 0 && this.list[x+1][y] !== 0 && this.list[x][y-1] !== 0) {
+									trList[x].childNodes[y].childNodes[0].style.borderBottomLeftRadius = '10px';
+								}
+								if(x+1 <= this.row-1 && y+1 <= this.col-1 && this.list[x+1][y] !== 0 && this.list[x][y+1] !== 0) {
+									trList[x].childNodes[y].childNodes[0].style.borderBottomRightRadius = '10px';
+								}
+							}
+						}
+						this.$forceUpdate()
+					},
+					
+					// 监听键盘事件
+					onKeyBoard() {
+						document.addEventListener('keydown', (e) => {
+							if(e.keyCode == 32 && !this.isStart) {
+								this.isStart = true;
+								this.spiritMove();
+								this.monsterMove();
+							}
+							if(this.isStart && !this.isOver && [37,38,39,40].includes(e.keyCode)) {
+								let [x, y] = this.location;
+								let nexDir = '';
+								switch (e.keyCode){
+									case 37: 
+										nexDir = 'left';
+										y -= 1;
+										break;
+									case 38:
+										nexDir = 'up';
+										x -= 1;
+										break;
+									case 39:
+										nexDir = 'right';
+										y+=1;
+										break;
+									case 40:
+										nexDir = 'down';
+										x+=1; 
+										break;
+								}
+								if(this.list[x][y] == 0) {
+									return;
+								}
+								this.dir = nexDir;
+							}
+						})
+					},
+					
+					// 吃豆人移动
+					spiritMove() {
+						if(this.timer) {
+							clearInterval(this.timer)
+							this.timer = null;
+							return;
+						}
+						this.timer = setInterval(() => {
+							let [x, y] = this.location;
+							switch (this.dir){
+								case 'left': y--; break;
+								case 'up': x--; break;
+								case 'right': y++; break;
+								case 'down': x++; break;
+							}
+							if(this.list[x][y] == 0) {
+								return;
+							}
+							this.location = [x, y];
+							this.drawSpirit();
+						}, this.speed)
+					},
+					// 渲染吃豆人
+					drawSpirit() {
+						let [x, y] = this.location;
+						let targetLeft = this.list_detail[x][y].left + 3;
+						let targetTop = this.list_detail[x][y].top + 3;
+						[this.left, this.top] = [targetLeft, targetTop];
+						if(this.isStart) {
+							// 吃小金币
+							if(this.list[x][y] == 2) {
+								this.score++;
+							}
+							// 吃大金币
+							if(this.list[x][y] == 5) {
+								this.score += 5
+								clearInterval(this.timer_weak);
+								this.timer_weak = null;
+								this.isWeak = true;
+								this.onWeakTimer()
+							}
+							setTimeout(() => {
+								for(let i = 0; i < this.list.length; i++) {
+									for(let j = 0; j < this.list[0].length; j++) {
+										if(this.list[i][j] === 3) {
+											this.list[i][j] = 1;
+										}
+									}
+								}
+								this.list[x][y] = 3;
+								this.die();
+								this.win();
+								this.$forceUpdate();
+							}, this.speed/2)
+						}
+					},
+					// 弱化倒计时
+					onWeakTimer() {
+						let time = 0;
+						this.timer_weak = setInterval(() => {
+							time++;
+							console.log(time);
+							if(time == this.weakTime) {
+								clearInterval(this.timer_weak);
+								this.isWeak = false;
+							}
+						}, 1000);
+					},
+
+					// 怪兽移动
+					monsterMove() {
+						this.timer_monster = setInterval(() => {
+							for (let i = 0; i < this.monster.length; i++) {
+								if(this.monster[i].show) {
+									let [x, y] = this.monster[i].location;
+									let dir = this.monster[i].dir;
+									switch (dir) {
+										case 'left': y--; break;
+										case 'up': x--; break;
+										case 'right': y++; break;
+										case 'down': x++; break;
+									}
+									// 判断下一步移动的地方是否有墙，如果有墙，则随机从其他方位选一个继续移动
+									if(this.list[x][y] == 0) {
+										switch (dir) {
+											case 'left': y++; break;
+											case 'up': x++; break;
+											case 'right': y--; break;
+											case 'down': x--; break;
+										}
+										let arr = [];
+										if(x - 1 >= 0 && (this.list[x - 1][y] === 1 || this.list[x - 1][y] === 2)) {
+											arr.push({dir: 'up', location: [x-1, y]})
+										}
+										if(x + 1 <= this.row - 1 && (this.list[x + 1][y] === 1 || this.list[x + 1][y] === 2)) {
+											arr.push({dir: 'down', location: [x+1, y]})
+										}
+										if(y - 1 >= 0 && (this.list[x][y - 1] === 1 || this.list[x][y - 1] === 2)) {
+											arr.push({dir: 'left', location: [x, y-1]})
+										}
+										if(y + 1 <= this.col - 1 && (this.list[x][y + 1] === 1 || this.list[x][y + 1] === 2)) {
+											arr.push({dir: 'right', location: [x, y+1]})
+										}
+										let index = Math.floor(Math.random() * arr.length);
+										this.monster[i].dir = arr[index].dir;
+										this.monster[i].location = arr[index].location;
+										this.drawMonster();
+										return;
+									}
+									this.monster[i].location = [x, y];
+									this.drawMonster();
+								}
+							}
+						}, this.speed_monster);
+					},
+					// 渲染怪兽
+					drawMonster() {
+						for (let i = 0; i < this.monster.length; i++) {
+							if(this.monster[i].show) {
+								let [x, y] = this.monster[i].location;
+								this.monster[i].left = this.list_detail[x][y].left + 3;
+								this.monster[i].top = this.list_detail[x][y].top + 3;
+							}
+						}
+						this.die();
+						this.$forceUpdate();
+					},
+				
+					// 是否死了
+					// 判断吃豆人的坐标是否与怪物坐标重叠
+					die() {
+						const [xA, yA] = this.location;
+						for (let i = 0; i < this.monster.length; i++) {
+							if(this.monster[i].show) {
+								let [x, y] = this.monster[i].location;
+								if(x == xA && y == yA && !this.isWeak) {
+									clearInterval(this.timer);
+									clearInterval(this.timer_monster);
+									this.isOver = true;
+									this.isWin = false;
+									break;
+								}
+								if(x == xA && y == yA && this.isWeak) {
+									this.monster[i].show = false;
+									this.score += 10;
+									// 每次吃怪物都要判断，是否把怪物吃完了，如果吃完为了，则直接获胜
+									const arr = this.monster.filter(item => item.show);
+									if(arr.length === 0) {
+										let arrBeansSmall = 0;
+										let arrBeansBig = 0;
+										for(let i = 0; i < this.list.length; i++) {
+											for(let j = 0; j < this.list[0].length; j++) {
+												if(this.list[i][j] === 2) {
+													this.list[i][j] = 1;
+													arrBeansBig++;
+												}
+												if(this.list[i][j] === 5) {
+													this.list[i][j] = 1;
+													arrBeansBig += 5;
+												}
+											}
+										}
+										this.score = this.score*1 + arrBeansSmall*1 + arrBeansBig*1;
+										this.win();
+									}
+								}
+							}
+						}
+						this.$forceUpdate();
+					},
+
+					// 是否赢了
+					// 每次吃完豆豆，判断当前地图是否还有豆豆
+					win() {
+						let arr = [];
+						for(let i = 0; i < this.list.length; i++) {
+							for(let j = 0; j < this.list[0].length; j++) {
+								if(this.list[i][j] === 2 || this.list[i][j] === 5) {
+									arr.push([i, j]);
+								}
+							}
+						}
+						if(arr.length === 0) {
+							clearInterval(this.timer);
+							clearInterval(this.timer_monster);
+							this.isOver = true;
+							this.isWin = true;
+							return;
+						}
+						this.$forceUpdate();
+					},
+				}
+			});
+		</script>
+	</body>
+</html>
